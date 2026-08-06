@@ -2,8 +2,8 @@ name: Deploy Daily Report to GitHub Pages
 
 on:
   schedule:
-    - cron: '40 22 * * *'  # 每天台灣時間早上 06:40 自動執行 (UTC 22:40)
-  workflow_dispatch:        # 支援手動觸發執行
+    - cron: '40 22 * * *'  # 每天台灣時間早上 06:40 自動執行
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -26,7 +26,7 @@ jobs:
 
       - name: Download Latest Report from Google Drive
         run: |
-          curl -L "https://drive.google.com/uc?export=download&id=16j6KZLpA0i1IzpEhY1JgfSVssHMpDM-P" -o index.html
+          curl -L "https://drive.google.com/uc?export=download&id=1krNecrj9odE_XaRNHeGsB-kTcgLz0PTd" -o index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
