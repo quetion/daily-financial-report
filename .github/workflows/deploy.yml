@@ -24,21 +24,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Install gdown
-        run: pip install --upgrade gdown
-
       - name: Download latest report from Google Drive
         env:
           FILE_ID: 1TAHe97Io5ESTYi2lxQWFkuJ5QqrO2uxk
         run: |
+          set -e
           mkdir -p _site
-          # 新版 gdown 已移除 --id，改用完整網址 + --fuzzy
-          gdown --fuzzy "https://drive.google.com/uc?id=${FILE_ID}" -O _site/index.html
+
+          # 直接用 curl 打 Google Drive 的公開下載端點，不再依賴 gdown
+          curl -sSL -c cookies.txt \
+            "https://drive.google.com/uc?export=download&id=${FILE_ID}" \
+            -o _site/index.html
+
+          # 檔案較大時 Google 會先回傳一個「病毒掃描警告」頁面，裡面藏著真正的確認連結（confirm token）
+          if grep -q "confirm=" _site/index.html 2>/dev/null; then
+            CONFIRM_URL=$(grep -o 'href="[^"]*confirm=[^"]*"' _site/index.html | head -1 | sed 's/href="//;s/"$//' | sed 's/&amp;/\&/g')
+            if [ -n "$CONFIRM_URL" ]; then
+              curl -sSL -b cookies.txt "https://drive.google.com${CONFIRM_URL}" -o _site/index.html
+            fi
+          fi
 
       - name: Verify downloaded file
         run: |
@@ -46,13 +50,13 @@ jobs:
           test -s _site/index.html || { echo "::error::下載檔案為空"; exit 1; }
           SIZE=$(stat -c%s _site/index.html)
           echo "下載大小: ${SIZE} bytes"
-          # Drive 權限不足 / 配額超限時會回傳一頁很小的 HTML 錯誤頁
+          # 權限不足 / 配額超限時，Google 會回傳一頁很小的 HTML 錯誤頁
           if [ "$SIZE" -lt 2000 ]; then
             echo "::error::檔案過小，可能抓到 Google Drive 的錯誤頁面"
             head -c 500 _site/index.html
             exit 1
           fi
-          if grep -qi "Google Drive - Quota exceeded\|Sign in - Google Accounts\|需要存取權" _site/index.html; then
+          if grep -qi "Google Drive - Quota exceeded\|Sign in - Google Accounts\|需要存取權\|accounts.google.com" _site/index.html; then
             echo "::error::抓到 Google 權限/配額頁面，請確認檔案已設為「知道連結的任何人」"
             exit 1
           fi
