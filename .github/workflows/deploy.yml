@@ -3,7 +3,7 @@ name: Deploy Daily Report to GitHub Pages
 on:
   schedule:
     - cron: '40 22 * * *'  # 每天台灣時間早上 06:40 自動執行
-  workflow_dispatch:
+  workflow_dispatch:        # 支援手動按鈕執行
 
 permissions:
   contents: write
@@ -24,9 +24,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
       - name: Download Latest Report from Google Drive
-        run: curl -L "https://drive.google.com/uc?export=download&id=1TAHe97Io5ESTYi2lxQWFkuJ5QqrO2uxk" -o index.html
-      
+        run: |
+          pip install gdown
+          gdown --id "1TAHe97Io5ESTYi2lxQWFkuJ5QqrO2uxk" -O index.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
