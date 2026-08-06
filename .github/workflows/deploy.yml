@@ -1,0 +1,41 @@
+name: Deploy Daily Report to GitHub Pages
+
+on:
+  schedule:
+    - cron: '40 13 * * *'  # 每天台灣時間晚上 21:40 自動執行
+  workflow_dispatch:        # 支援手動按鈕執行
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Latest Report from Google Drive
+        run: |
+          curl -L "https://drive.google.com/uc?export=download&id=16j6KZLpA0i1IzpEhY1JgfSVssHMpDM-P" -o index.html
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
