@@ -2,11 +2,11 @@ name: Deploy Daily Report to GitHub Pages
 
 on:
   schedule:
-    - cron: '40 22 * * *'  # 每天台灣時間早上 06:40 自動執行
-  workflow_dispatch:        # 支援手動按鈕執行
+    - cron: '40 22 * * *'   # 台灣時間每天 06:40
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -29,18 +29,41 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Download Latest Report from Google Drive
+      - name: Install gdown
+        run: pip install --upgrade gdown
+
+      - name: Download latest report from Google Drive
+        env:
+          FILE_ID: 1TAHe97Io5ESTYi2lxQWFkuJ5QqrO2uxk
         run: |
-          pip install gdown
-          gdown --id "1TAHe97Io5ESTYi2lxQWFkuJ5QqrO2uxk" -O index.html
+          mkdir -p _site
+          # 新版 gdown 已移除 --id，改用完整網址 + --fuzzy
+          gdown --fuzzy "https://drive.google.com/uc?id=${FILE_ID}" -O _site/index.html
+
+      - name: Verify downloaded file
+        run: |
+          set -e
+          test -s _site/index.html || { echo "::error::下載檔案為空"; exit 1; }
+          SIZE=$(stat -c%s _site/index.html)
+          echo "下載大小: ${SIZE} bytes"
+          # Drive 權限不足 / 配額超限時會回傳一頁很小的 HTML 錯誤頁
+          if [ "$SIZE" -lt 2000 ]; then
+            echo "::error::檔案過小，可能抓到 Google Drive 的錯誤頁面"
+            head -c 500 _site/index.html
+            exit 1
+          fi
+          if grep -qi "Google Drive - Quota exceeded\|Sign in - Google Accounts\|需要存取權" _site/index.html; then
+            echo "::error::抓到 Google 權限/配額頁面，請確認檔案已設為「知道連結的任何人」"
+            exit 1
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload Artifact
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: '_site'
 
       - name: Deploy to GitHub Pages
         id: deployment
