@@ -26,8 +26,8 @@ jobs:
 
       - name: Download Latest Report from Google Drive
         run: |
-          curl -L "https://drive.google.com/uc?export=download&id=1krNecrj9odE_XaRNHeGsB-kTcgLz0PTd" -o index.html
-
+          curl -L "https://drive.google.com/uc?export=download&id=1TAHe97Io5ESTYi2lxQWFkuJ5QqrO2uxk" -o index.html
+      
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
