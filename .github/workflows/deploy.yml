@@ -26,7 +26,7 @@ jobs:
 
       - name: Download latest report from Google Drive
         env:
-          FILE_ID: 17FwXmeEEcA1nikX7hyQ8Jq6YRyrRaWKH
+          FILE_ID: 1cWdj2UGH0X6vhdZ6JZ0Up4ryjqjhIitH
         run: |
           set -e
           mkdir -p _site
